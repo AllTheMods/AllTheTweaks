@@ -4,6 +4,7 @@ plugins {
     id 'idea'
     id 'maven-publish'
     id 'net.neoforged.moddev' version '2.0.140'
+    id 'com.gradleup.shadow' version '9.4.1'
 }
 
 version = mod_version
@@ -20,6 +21,7 @@ println "Java: ${System.getProperty 'java.version'}, JVM: ${System.getProperty '
 sourceSets.main.resources { srcDir 'src/generated/resources' exclude(".cache")}
 
 repositories {
+    mavenCentral()
     maven {
         url "https://www.cursemaven.com"
         content {
@@ -31,7 +33,14 @@ repositories {
     }
 
     maven { url = "https://maven.bawnorton.com/releases" }
-
+    maven { url = "https://jitpack.io" }
+    maven {
+        name = "Jared's maven"
+        url = "https://maven.blamejared.com/"
+    }
+    maven { url = "https://maven.architectury.dev/" }
+    maven { url = "https://maven.latvian.dev/releases" }
+    maven { url = "https://maven.ftb.dev/releases" }
 }
 
 neoForge {
@@ -70,9 +79,6 @@ neoForge {
             jvmArgument("-XX:+IgnoreUnrecognizedVMOptions")
             jvmArgument("-XX:+AllowEnhancedClassRedefinition")
             systemProperty("mixin.debug.export", "true")
-            if (it.name.startsWith("client")) {
-                programArguments.addAll("--width", "1920", "--height", "1080")
-            }
             logLevel = org.slf4j.event.Level.DEBUG
         }
     }
@@ -86,6 +92,8 @@ neoForge {
 
 configurations {
     runtimeClasspath.extendsFrom localRuntime
+    shadow
+    implementation.extendsFrom(this.configurations.shadow)
 }
 dependencies {
     // Jars in "libs" folder
@@ -100,6 +108,21 @@ dependencies {
         }
     }
 
+    shadow("com.github.CrashSystemZ:jDRPC:v1.2.1") {
+        transitive = false
+    }
+    additionalRuntimeClasspath("com.github.CrashSystemZ:jDRPC:v1.2.1") {
+        transitive = false
+    }
+
+    compileOnly "mezz.jei:jei-1.21.1-neoforge-api:${jei_version}"
+    runtimeOnly "mezz.jei:jei-1.21.1-neoforge:${jei_version}"
+    runtimeOnly "curse.maven:jade-324717:${jade_file}"
+    runtimeOnly "dev.latvian.mods:kubejs-neoforge:${kubejs_version}"
+    runtimeOnly "dev.ftb.mods:ftb-library-neoforge:${ftb_library_version}"
+    runtimeOnly "dev.ftb.mods:ftb-teams-neoforge:${ftb_teams_version}"
+    runtimeOnly "dev.ftb.mods:ftb-quests-neoforge:${ftb_quests_version}"
+
     compileOnly "curse.maven:no-chat-reports-634062:5441267"
     compileOnly "curse.maven:villages-and-pillages-915531:5615165"
     compileOnly "com.yungnickyoung.minecraft.yungsapi:YungsApi:1.21.1-NeoForge-5.1.3"
@@ -112,8 +135,8 @@ dependencies {
     implementation "curse.maven:yacl-667299:6336630"
     compileOnly("curse.maven:xycraft-machines-653791:5601045")
     implementation "curse.maven:modernfix-790626:7200212"
-    implementation "curse.maven:berry-pouch-1246510:7310810"
     implementation "curse.maven:applied-energistics-2-223794:7027323"
+    runtimeOnly "curse.maven:guideme-1173950:${guideme_file}"
     implementation "curse.maven:just-dire-things-1002348:7463040"
 }
 
@@ -140,6 +163,9 @@ sourceSets.main.resources.srcDir generateModMetadata
 neoForge.ideSyncTask generateModMetadata
 
 jar {
+    // shadowJar owns the release name, so keep the un-shadowed jar out of its way
+    archiveClassifier = 'slim'
+
     manifest {
         attributes([
                 "Specification-Title"     : mod_id,
@@ -155,11 +181,22 @@ jar {
     reproducibleFileOrder = true
 }
 
+tasks.named("shadowJar", com.github.jengelman.gradle.plugins.shadow.tasks.ShadowJar) {
+    archiveClassifier.set("")
+    configurations = [project.configurations.shadow]
+
+    relocate("fun.crashsystem.jdrpc", "${project.group}.shadow.jdrpc")
+}
+
+tasks.named("assemble") {
+    dependsOn(tasks.named("shadowJar"))
+}
+
 publishing {
     publications {
         register('mavenJava', MavenPublication) {
             artifactId = mod_id
-            from components.java
+            artifact tasks.named("shadowJar")
         }
     }
     repositories {

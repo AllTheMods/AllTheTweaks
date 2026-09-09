@@ -1,7 +1,7 @@
 package com.thevortex.allthetweaks.mixin;
 
 import com.llamalad7.mixinextras.injector.ModifyReturnValue;
-import com.thevortex.allthetweaks.AllTheTweaks;
+import com.thevortex.allthetweaks.config.Configuration;
 import com.thevortex.allthetweaks.proxy.BCCProxy;
 import net.minecraft.client.Minecraft;
 import net.neoforged.fml.ModList;
@@ -12,11 +12,11 @@ import org.spongepowered.asm.mixin.injection.At;
 public class TitleWin {
 
     @ModifyReturnValue(method = "createTitle", at = @At("RETURN"))
-    private static String allthetweaks$modifyTitleWin(String original) {
+    private String allthetweaks$modifyTitleWin(String original) {
         if(ModList.get() == null){return original;}
 
         if(ModList.get().isLoaded("bcc")){
-            return AllTheTweaks.DISPLAY + " v" + BCCProxy.getVersion();
+            return Configuration.packProfile().displayName() + " v" + BCCProxy.getVersion();
         }
         return original;
     }

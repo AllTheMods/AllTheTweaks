@@ -4,9 +4,11 @@ import com.mojang.blaze3d.platform.MacosUtil;
 import com.mojang.blaze3d.platform.NativeImage;
 import com.thevortex.allthetweaks.AllTheTweaks;
 import com.thevortex.allthetweaks.config.Configuration;
+import com.thevortex.allthetweaks.pack.PackProfile;
 import net.minecraft.client.Minecraft;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.packs.resources.IoSupplier;
+import net.neoforged.fml.loading.FMLPaths;
 import org.jetbrains.annotations.Nullable;
 import org.lwjgl.glfw.GLFW;
 import org.lwjgl.glfw.GLFWImage;
@@ -16,6 +18,9 @@ import org.lwjgl.system.MemoryUtil;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.ByteBuffer;
+import java.nio.file.Files;
+import java.nio.file.InvalidPathException;
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -32,6 +37,14 @@ public class MyCons {
     }
 
     private static List<IoSupplier<InputStream>> getStandardIcons() {
+        PackProfile profile = Configuration.packProfile();
+        var configured = new ArrayList<IoSupplier<InputStream>>();
+        addConfiguredIcon(configured, profile.icon16());
+        addConfiguredIcon(configured, profile.icon32());
+        if (!configured.isEmpty()) {
+            return configured;
+        }
+
         var list = new ArrayList<IoSupplier<InputStream>>();
         String prefix = getPrefix();
         short[] sizes = {16, 32, 48, 128, 256};
@@ -41,6 +54,42 @@ public class MyCons {
             resource.ifPresent(value -> list.add(value::open));
         }
         return list;
+    }
+
+    private static void addConfiguredIcon(List<IoSupplier<InputStream>> list, String configuredName) {
+        Path resolved = resolveInConfigFolder(configuredName);
+        if (resolved == null) {
+            return;
+        }
+
+        if (!Files.isRegularFile(resolved)) {
+            AllTheTweaks.LOGGER.warn("Window icon {} is missing, falling back to the bundled icons", resolved);
+            return;
+        }
+
+        list.add(() -> Files.newInputStream(resolved));
+    }
+
+    @Nullable
+    private static Path resolveInConfigFolder(String configuredName) {
+        if (configuredName.isBlank()) {
+            return null;
+        }
+
+        Path folder = FMLPaths.CONFIGDIR.get().resolve(AllTheTweaks.MODID).normalize();
+
+        try {
+            Path resolved = folder.resolve(configuredName).normalize();
+            if (resolved.startsWith(folder)) {
+                return resolved;
+            }
+
+            AllTheTweaks.LOGGER.warn("Window icon {} resolves outside {}, falling back to the bundled icons", configuredName, folder);
+        } catch (InvalidPathException exception) {
+            AllTheTweaks.LOGGER.warn("Window icon {} is not a usable file name, falling back to the bundled icons", configuredName);
+        }
+
+        return null;
     }
 
     @Nullable
@@ -59,6 +108,10 @@ public class MyCons {
         switch (i) {
             case GLFW.GLFW_PLATFORM_WIN32, GLFW.GLFW_PLATFORM_X11:
                 List<IoSupplier<InputStream>> list = getStandardIcons();
+                if (list.isEmpty()) {
+                    AllTheTweaks.LOGGER.warn("Found no window icons to set");
+                    break;
+                }
                 List<ByteBuffer> list1 = new ArrayList<>(list.size());
 
                 try (MemoryStack memorystack = MemoryStack.stackPush()) {

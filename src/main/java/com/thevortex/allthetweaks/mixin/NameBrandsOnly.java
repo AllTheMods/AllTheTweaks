@@ -41,7 +41,7 @@ public class NameBrandsOnly {
         {
             ImmutableList.Builder<String> brd = ImmutableList.builder();
             if(AllTheTweaks.BCC){
-                brd.add(AllTheTweaks.DISPLAY + " v" + BCCProxy.getVersion());
+                brd.add(Configuration.packProfile().displayName() + " v" + BCCProxy.getVersion());
             }
             if(AllTheTweaks.mfContainer.isPresent() && AllTheTweaks.brandingModernFix){brd.add("ModernFix " + AllTheTweaks.mfContainer.get().getModInfo().getVersion().toString());}
             int tModCount = AllTheTweaks.ModsLoaded;
