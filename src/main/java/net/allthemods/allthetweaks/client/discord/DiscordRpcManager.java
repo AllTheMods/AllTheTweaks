@@ -2,6 +2,7 @@ package net.allthemods.allthetweaks.client.discord;
 
 import net.minecraft.client.Minecraft;
 import net.neoforged.fml.ModList;
+import net.neoforged.neoforge.client.event.ClientTickEvent;
 
 import net.allthemods.allthetweaks.ATTConfig;
 import net.allthemods.allthetweaks.pack.PackProfile;
@@ -27,6 +28,7 @@ public final class DiscordRpcManager {
     
     private static final String DISCORD_URL = "https://discord.gg/allthemods";
     private static final long RECONNECT_DELAY_MS = 10_000L;
+    private static final int REFRESH_INTERVAL_TICKS = 20;
     private static final ExecutorService EXECUTOR = Executors.newSingleThreadExecutor(task -> {
         Thread thread = new Thread(task, "AllTheTweaks-DiscordRpc");
         thread.setDaemon(true);
@@ -38,6 +40,7 @@ public final class DiscordRpcManager {
     private static boolean shutdownHookRegistered;
     private static boolean updateRequested;
     private static boolean closeRequested;
+    private static int ticksSinceRefresh;
     private static long startTime;
     private static long nextReconnectAt;
     
@@ -65,6 +68,13 @@ public final class DiscordRpcManager {
         DiscordRpcManager.LOGGER.info("AllTheTweaks Discord RPC Manager started");
     }
     
+    public static void onClientTick(ClientTickEvent.Post event) {
+        if (++DiscordRpcManager.ticksSinceRefresh < DiscordRpcManager.REFRESH_INTERVAL_TICKS) return;
+
+        DiscordRpcManager.ticksSinceRefresh = 0;
+        DiscordRpcManager.refreshFromConfig();
+    }
+    
     public static void refreshFromConfig() {
         Minecraft minecraft = Minecraft.getInstance();
         if (minecraft.isSameThread()) DiscordRpcManager.refreshFromConfigOnRenderThread();
@@ -73,15 +83,21 @@ public final class DiscordRpcManager {
 
     private static void refreshFromConfigOnRenderThread() { // Peak name
         if (!DiscordRpcManager.isConfiguredEnabled()) {
+            boolean teardown;
+
             synchronized (DiscordRpcManager.LOCK) {
-                DiscordRpcManager.started = false;
-                DiscordRpcManager.lastSnapshot = null;
-                DiscordRpcManager.nextReconnectAt = 0L;
-                DiscordRpcManager.startTime = 0L;
-                DiscordRpcManager.closeRequested = true;
+                teardown = DiscordRpcManager.started;
+
+                if (teardown) {
+                    DiscordRpcManager.started = false;
+                    DiscordRpcManager.lastSnapshot = null;
+                    DiscordRpcManager.nextReconnectAt = 0L;
+                    DiscordRpcManager.startTime = 0L;
+                    DiscordRpcManager.closeRequested = true;
+                }
             }
 
-            DiscordRpcManager.scheduleUpdate();
+            if (teardown) DiscordRpcManager.scheduleUpdate();
             return;
         }
 

@@ -12,6 +12,7 @@ import net.neoforged.fml.event.config.ModConfigEvent;
 import net.neoforged.fml.event.lifecycle.FMLClientSetupEvent;
 import net.neoforged.neoforge.client.gui.ConfigurationScreen;
 import net.neoforged.neoforge.client.gui.IConfigScreenFactory;
+import net.neoforged.neoforge.common.NeoForge;
 
 import net.allthemods.allthetweaks.api.ATT;
 import net.allthemods.allthetweaks.client.discord.DiscordRpcManager;
@@ -27,6 +28,7 @@ public class AllTheTweaksClient {
     
     @SubscribeEvent
     private static void onClientSetup(final FMLClientSetupEvent event) {
+        NeoForge.EVENT_BUS.addListener(DiscordRpcManager::onClientTick);
         event.enqueueWork(DiscordRpcManager::start);
         event.enqueueWork(ATTWindowModifier::apply);
     }

@@ -43,6 +43,19 @@ public class ATTLanguageProvider extends LanguageProvider {
         this.add(ATTRegistry.PATRICK_STAR.get(), "Patrick Star");
         
         this.add("allthetweaks.configuration.rpc_enabled", "Discord Rich Presence Enabled");
+        this.add("allthetweaks.configuration.pack", "Pack");
+        this.add("allthetweaks.configuration.pack.tooltip", "Identity of this pack: the name it shows under, its links, and its Discord presence.");
+        this.add("allthetweaks.configuration.discord.tooltip", "Which Discord application the Rich Presence is published under.");
+        this.add("allthetweaks.configuration.window.tooltip", "Icons for the game window.");
+        this.add("allthetweaks.configuration.pack.display_name.tooltip", "Shown in the window title and on the main menu branding lines.");
+        this.add("allthetweaks.configuration.pack.curseforge_url.tooltip", "Opened by the CurseForge button on the Discord Rich Presence card.");
+        this.add("allthetweaks.configuration.pack.discord.application_id.tooltip", "The Discord application the presence is published under. Its name and uploaded art are what players see on the card, so a pack with its own branding needs its own application.");
+        this.add("allthetweaks.configuration.pack.discord.logo_key.tooltip", "Art asset key uploaded to that Discord application. The card shows no image unless this matches one of its assets.");
+        this.add("allthetweaks.configuration.pack.window.icon_16.tooltip", "File name inside the allthetweaks config folder. Leave blank to use the bundled icon.");
+        this.add("allthetweaks.configuration.pack.window.icon_32.tooltip", "File name inside the allthetweaks config folder. Leave blank to use the bundled icon.");
+        this.add("allthetweaks.configuration.rpc_enabled.tooltip", "Publish this pack as your Discord activity. Takes effect without restarting.");
+        this.add("allthetweaks.configuration.discord", "Discord");
+        this.add("allthetweaks.configuration.window", "Window");
         this.add("allthetweaks.configuration.pack.display_name", "Pack Name");
         this.add("allthetweaks.configuration.pack.curseforge_url", "Pack CurseForge Page");
         this.add("allthetweaks.configuration.pack.discord.application_id", "Discord Application ID");
