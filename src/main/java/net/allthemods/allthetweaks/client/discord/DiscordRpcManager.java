@@ -4,6 +4,7 @@ import net.minecraft.client.Minecraft;
 import net.neoforged.fml.ModList;
 
 import net.allthemods.allthetweaks.ATTConfig;
+import net.allthemods.allthetweaks.pack.PackProfile;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -24,7 +25,6 @@ public final class DiscordRpcManager {
     private static final Object LOCK = new Object();
     private static final Object CLIENT_LOCK = new Object();
     
-    private static final String LOGO_KEY = "icon";
     private static final String DISCORD_URL = "https://discord.gg/allthemods";
     private static final long RECONNECT_DELAY_MS = 10_000L;
     private static final ExecutorService EXECUTOR = Executors.newSingleThreadExecutor(task -> {
@@ -42,7 +42,7 @@ public final class DiscordRpcManager {
     private static long nextReconnectAt;
     
     private static DiscordIPC client;
-    private static PackMode pack = PackMode.ATM11;
+    private static PackProfile pack = PackProfile.DEFAULT;
     private static RPCState state = RPCState.STARTING;
     private static Snapshot lastSnapshot;
     
@@ -85,7 +85,7 @@ public final class DiscordRpcManager {
             return;
         }
 
-        PackMode nextPack = DiscordRpcManager.getConfiguredPack();
+        PackProfile nextPack = DiscordRpcManager.getConfiguredPack();
         RPCState nextState = RPCState.resolve();
 
         synchronized (DiscordRpcManager.LOCK) {
@@ -96,11 +96,11 @@ public final class DiscordRpcManager {
                 DiscordRpcManager.lastSnapshot = null;
             }
 
-            if (DiscordRpcManager.pack.getApplicationId() != nextPack.getApplicationId()) {
+            if (DiscordRpcManager.pack.applicationId() != nextPack.applicationId()) {
                 DiscordRpcManager.closeRequested = true;
                 DiscordRpcManager.nextReconnectAt = 0L;
                 DiscordRpcManager.lastSnapshot = null;
-            } else if (DiscordRpcManager.pack != nextPack) {
+            } else if (!DiscordRpcManager.pack.equals(nextPack)) {
                 DiscordRpcManager.lastSnapshot = null;
             }
 
@@ -225,14 +225,15 @@ public final class DiscordRpcManager {
     }
     
     private static Snapshot createSnapshot() {
-        PackMode currentPack = DiscordRpcManager.pack;
+        PackProfile currentPack = DiscordRpcManager.pack;
         RPCState currentState = DiscordRpcManager.state;
-        
+
         return new Snapshot(
-                currentPack.getApplicationId(),
+                currentPack.applicationId(),
                 currentState.display(),
                 ModList.get().getMods().size() + " Mods",
-                currentPack.getCurseforgeUrl(),
+                currentPack.curseforgeUrl(),
+                currentPack.logoKey(),
                 DiscordRpcManager.startTime
         );
     }
@@ -271,10 +272,11 @@ public final class DiscordRpcManager {
     private static boolean isCurrentSnapshot(Snapshot snapshot) {
         if (!DiscordRpcManager.started) return false;
         
-        return snapshot.applicationId() == DiscordRpcManager.pack.getApplicationId()
+        return snapshot.applicationId() == DiscordRpcManager.pack.applicationId()
                 && snapshot.details().equals(DiscordRpcManager.state.display())
                 && snapshot.state().equals(ModList.get().getMods().size() + " Mods")
-                && snapshot.curseforgeUrl().equals(DiscordRpcManager.pack.getCurseforgeUrl())
+                && snapshot.curseforgeUrl().equals(DiscordRpcManager.pack.curseforgeUrl())
+                && snapshot.logoKey().equals(DiscordRpcManager.pack.logoKey())
                 && snapshot.startTime() == DiscordRpcManager.startTime;
     }
     
@@ -283,7 +285,7 @@ public final class DiscordRpcManager {
                 .setType(ActivityType.PLAYING)
                 .setDetails(snapshot.details())
                 .setState(snapshot.state())
-                .setLargeImage(DiscordRpcManager.LOGO_KEY, snapshot.details())
+                .setLargeImage(snapshot.logoKey(), snapshot.details())
                 .setStartTimestamp(snapshot.startTime())
                 .addButton("CurseForge", snapshot.curseforgeUrl())
                 .addButton("Discord", DiscordRpcManager.DISCORD_URL)
@@ -326,15 +328,16 @@ public final class DiscordRpcManager {
         return ATTConfig.RPC_ENABLED.get();
     }
     
-    private static PackMode getConfiguredPack() {
-        return ATTConfig.PACK_MODE.get();
+    private static PackProfile getConfiguredPack() {
+        return ATTConfig.packProfile();
     }
-    
+
     private record Snapshot(
             long applicationId,
             String details,
             String state,
             String curseforgeUrl,
+            String logoKey,
             long startTime
     ) { }
 }

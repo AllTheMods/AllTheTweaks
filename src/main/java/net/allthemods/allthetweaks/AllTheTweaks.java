@@ -7,6 +7,8 @@ import net.neoforged.fml.ModContainer;
 import net.neoforged.fml.ModList;
 import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.fml.common.Mod;
+import net.neoforged.fml.config.ModConfig;
+import net.neoforged.fml.event.config.ModConfigEvent;
 import net.neoforged.fml.event.lifecycle.FMLLoadCompleteEvent;
 
 import net.allthemods.allthetweaks.api.ATT;
@@ -43,6 +45,21 @@ public class AllTheTweaks {
 
     }
     
+    @SubscribeEvent
+    public static void onConfigLoading(final ModConfigEvent.Loading event) {
+        AllTheTweaks.handleConfig(event.getConfig());
+    }
+
+    @SubscribeEvent
+    public static void onConfigReloading(final ModConfigEvent.Reloading event) {
+        AllTheTweaks.handleConfig(event.getConfig());
+    }
+
+    private static void handleConfig(ModConfig config) {
+        if (config.getSpec() != ATTConfig.COMMON) return;
+        ATTConfig.refreshPackProfile();
+    }
+
     @SubscribeEvent
     public static void onLoadComplete(final FMLLoadCompleteEvent event) {
         event.enqueueWork(() -> {

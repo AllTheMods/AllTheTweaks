@@ -1,17 +1,11 @@
 package net.allthemods.allthetweaks.core.mixin;
 
+import net.allthemods.allthetweaks.ATTConfig;
 import net.allthemods.allthetweaks.AllTheTweaks;
-import net.allthemods.allthetweaks.client.discord.PackMode;
 import net.allthemods.allthetweaks.proxy.BCCProxy;
-import net.minecraft.DetectedVersion;
-import net.neoforged.fml.ModList;
 import net.neoforged.fml.i18n.FMLTranslations;
 import net.neoforged.neoforge.common.NeoForgeVersion;
 import net.neoforged.neoforge.internal.BrandingControl;
-
-import net.minecraft.SharedConstants;
-
-import net.allthemods.allthetweaks.ATTConfig;
 
 import com.google.common.collect.ImmutableList;
 
@@ -35,7 +29,7 @@ public class NameBrandsOnly {
      */
     @Overwrite(remap = false)
     private static void computeBranding() {
-        AllTheTweaks.DISPLAY = PackMode.ATM11.name().replace("ATM", "All The Mods ");
+        AllTheTweaks.DISPLAY = ATTConfig.packProfile().displayName();
 
         if (brandings == null) {
             ImmutableList.Builder<String> brd = ImmutableList.builder();
@@ -57,4 +51,3 @@ public class NameBrandsOnly {
         }
     }
 }
-

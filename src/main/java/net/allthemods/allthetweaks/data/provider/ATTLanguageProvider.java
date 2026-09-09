@@ -43,7 +43,12 @@ public class ATTLanguageProvider extends LanguageProvider {
         this.add(ATTRegistry.PATRICK_STAR.get(), "Patrick Star");
         
         this.add("allthetweaks.configuration.rpc_enabled", "Discord Rich Presence Enabled");
-        this.add("allthetweaks.configuration.rpc_mode", "Discord Rich Presence Pack Mode");
+        this.add("allthetweaks.configuration.pack.display_name", "Pack Name");
+        this.add("allthetweaks.configuration.pack.curseforge_url", "Pack CurseForge Page");
+        this.add("allthetweaks.configuration.pack.discord.application_id", "Discord Application ID");
+        this.add("allthetweaks.configuration.pack.discord.logo_key", "Discord Logo Asset Key");
+        this.add("allthetweaks.configuration.pack.window.icon_16", "Window Icon (16x16)");
+        this.add("allthetweaks.configuration.pack.window.icon_32", "Window Icon (32x32)");
         
         this.add("allthetweaks.valhelsia_core.cosmeticsWardrobe", "Valhelsia Team is selling Capes, violating Commercial Usage Guidelines!");
         this.add("allthetweaks.valhelsia_core.dontbuyCosmetics", "Until this ends, ALL Valhelsia cosmetic features will be disabled in ATM ModPacks.");
