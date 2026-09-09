@@ -15,9 +15,11 @@ import fun.crashsystem.jdrpc.activity.Activity;
 import fun.crashsystem.jdrpc.activity.ActivityType;
 
 import java.time.Instant;
+import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.RejectedExecutionException;
+import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 public final class DiscordRpcManager {
@@ -26,9 +28,11 @@ public final class DiscordRpcManager {
     private static final Object LOCK = new Object();
     private static final Object CLIENT_LOCK = new Object();
     
+    private static final String PARTY_ID = "allthetweaks";
     private static final String DISCORD_URL = "https://discord.gg/allthemods";
     private static final long RECONNECT_DELAY_MS = 10_000L;
     private static final int REFRESH_INTERVAL_TICKS = 20;
+    private static final long IDLE_ROLL_INTERVAL_MS = 60_000L;
     private static final ExecutorService EXECUTOR = Executors.newSingleThreadExecutor(task -> {
         Thread thread = new Thread(task, "AllTheTweaks-DiscordRpc");
         thread.setDaemon(true);
@@ -41,8 +45,16 @@ public final class DiscordRpcManager {
     private static boolean updateRequested;
     private static boolean closeRequested;
     private static int ticksSinceRefresh;
+    private static boolean deferredToSimpleRpc;
+    private static boolean refreshFailureLogged;
+    private static volatile Progress progress;
+    private static volatile String details;
+    private static volatile String stateText;
+    private static volatile String smallImage;
     private static long startTime;
     private static long nextReconnectAt;
+    private static long idleRolledAt;
+    private static String idleMessage;
     
     private static DiscordIPC client;
     private static PackProfile pack = PackProfile.DEFAULT;
@@ -52,6 +64,12 @@ public final class DiscordRpcManager {
     private DiscordRpcManager() { }
     
     public static void start() {
+        if (ModList.get().isLoaded("simplerpc")) {
+            DiscordRpcManager.deferredToSimpleRpc = true;
+            DiscordRpcManager.LOGGER.info("Simple RPC is installed, leaving Discord Rich Presence to it");
+            return;
+        }
+
         synchronized (DiscordRpcManager.LOCK) {
             if (DiscordRpcManager.started) {
                 DiscordRpcManager.LOGGER.debug("Cannot start, already started");
@@ -68,11 +86,61 @@ public final class DiscordRpcManager {
         DiscordRpcManager.LOGGER.info("AllTheTweaks Discord RPC Manager started");
     }
     
+    public static void setDetails(String line) {
+        DiscordRpcManager.details = DiscordRpcManager.clampLine(line);
+    }
+
+    private static String clampLine(String line) {
+        String trimmed = line == null ? "" : line.strip();
+
+        if (trimmed.length() < 2) return null;
+
+        return trimmed.length() > 128 ? trimmed.substring(0, 128) : trimmed;
+    }
+
+    public static void clearDetails() {
+        DiscordRpcManager.details = null;
+    }
+
+    public static void setState(String line) {
+        DiscordRpcManager.stateText = DiscordRpcManager.clampLine(line);
+    }
+
+    public static void clearState() {
+        DiscordRpcManager.stateText = null;
+    }
+
+    public static void setSmallImage(String image) {
+        DiscordRpcManager.smallImage = image == null ? "" : image.strip();
+    }
+
+    public static void clearSmallImage() {
+        DiscordRpcManager.smallImage = null;
+    }
+
+    public static void setProgress(int current, int max) {
+        DiscordRpcManager.progress = new Progress(Math.max(0, current), Math.max(0, max));
+    }
+
+    public static void clearProgress() {
+        DiscordRpcManager.progress = null;
+    }
+
     public static void onClientTick(ClientTickEvent.Post event) {
         if (++DiscordRpcManager.ticksSinceRefresh < DiscordRpcManager.REFRESH_INTERVAL_TICKS) return;
 
         DiscordRpcManager.ticksSinceRefresh = 0;
-        DiscordRpcManager.refreshFromConfig();
+
+        try {
+            DiscordRpcManager.refreshFromConfig();
+        } catch (Exception exception) {
+            if (!DiscordRpcManager.refreshFailureLogged) {
+                DiscordRpcManager.refreshFailureLogged = true;
+                DiscordRpcManager.LOGGER.warn("Discord RPC refresh failed, further failures are logged at debug", exception);
+            } else {
+                DiscordRpcManager.LOGGER.debug("Discord RPC refresh failed", exception);
+            }
+        }
     }
     
     public static void refreshFromConfig() {
@@ -121,6 +189,23 @@ public final class DiscordRpcManager {
             }
 
             DiscordRpcManager.pack = nextPack;
+
+            if (nextState == RPCState.MAIN_MENU) {
+                long now = System.currentTimeMillis();
+                List<String> messages = nextPack.idleMessages();
+
+                if (messages.isEmpty()) {
+                    DiscordRpcManager.idleMessage = null;
+                } else if (DiscordRpcManager.idleRolledAt == 0L) {
+                    DiscordRpcManager.idleRolledAt = now;
+                } else if (now - DiscordRpcManager.idleRolledAt >= DiscordRpcManager.IDLE_ROLL_INTERVAL_MS) {
+                    DiscordRpcManager.idleMessage = DiscordRpcManager.rollIdleMessage(messages);
+                    DiscordRpcManager.idleRolledAt = now;
+                }
+            } else {
+                DiscordRpcManager.idleMessage = null;
+                DiscordRpcManager.idleRolledAt = 0L;
+            }
 
             if (DiscordRpcManager.state != nextState) {
                 DiscordRpcManager.state = nextState;
@@ -240,16 +325,63 @@ public final class DiscordRpcManager {
         }
     }
     
+    private static String rollIdleMessage(List<String> messages) {
+        String previous = DiscordRpcManager.idleMessage;
+        int index = previous == null ? -1 : messages.indexOf(previous);
+
+        if (index < 0 || messages.size() == 1) {
+            return messages.get(ThreadLocalRandom.current().nextInt(messages.size()));
+        }
+
+        int rolled = ThreadLocalRandom.current().nextInt(messages.size() - 1);
+        return messages.get(rolled < index ? rolled : rolled + 1);
+    }
+
+    private static String resolveSmallImage(PackProfile currentPack) {
+        return DiscordRpcManager.smallImage != null ? DiscordRpcManager.smallImage : currentPack.smallImage();
+    }
+
+    private static String resolveState(RPCState currentState, String mods) {
+        if (currentState == RPCState.PLAYING && DiscordRpcManager.stateText != null) {
+            return DiscordRpcManager.stateText;
+        }
+
+        return mods;
+    }
+
+    private static String resolveDetails(RPCState currentState) {
+        if (currentState == RPCState.MAIN_MENU && DiscordRpcManager.idleMessage != null) {
+            return DiscordRpcManager.idleMessage;
+        }
+
+        if (currentState == RPCState.PLAYING && DiscordRpcManager.details != null) {
+            return DiscordRpcManager.details;
+        }
+
+        return currentState.display();
+    }
+
     private static Snapshot createSnapshot() {
         PackProfile currentPack = DiscordRpcManager.pack;
         RPCState currentState = DiscordRpcManager.state;
+        Progress currentProgress = DiscordRpcManager.progress;
+        String mods = ModList.get().getMods().size() + " Mods";
+
+        if (currentProgress != null
+                && (currentState != RPCState.PLAYING || currentProgress.current() == 0)) {
+            currentProgress = null;
+        }
 
         return new Snapshot(
                 currentPack.applicationId(),
-                currentState.display(),
-                ModList.get().getMods().size() + " Mods",
+                DiscordRpcManager.resolveDetails(currentState),
+                DiscordRpcManager.resolveState(currentState, mods),
                 currentPack.curseforgeUrl(),
-                currentPack.logoKey(),
+                currentPack.largeImage(),
+                DiscordRpcManager.resolveSmallImage(currentPack),
+                currentPack.displayName(),
+                mods,
+                currentProgress,
                 DiscordRpcManager.startTime
         );
     }
@@ -287,25 +419,30 @@ public final class DiscordRpcManager {
     
     private static boolean isCurrentSnapshot(Snapshot snapshot) {
         if (!DiscordRpcManager.started) return false;
-        
-        return snapshot.applicationId() == DiscordRpcManager.pack.applicationId()
-                && snapshot.details().equals(DiscordRpcManager.state.display())
-                && snapshot.state().equals(ModList.get().getMods().size() + " Mods")
-                && snapshot.curseforgeUrl().equals(DiscordRpcManager.pack.curseforgeUrl())
-                && snapshot.logoKey().equals(DiscordRpcManager.pack.logoKey())
-                && snapshot.startTime() == DiscordRpcManager.startTime;
+
+        return snapshot.equals(DiscordRpcManager.createSnapshot());
     }
     
     private static Activity buildActivity(Snapshot snapshot) {
-        return new Activity.Builder()
+        Activity.Builder builder = new Activity.Builder()
                 .setType(ActivityType.PLAYING)
                 .setDetails(snapshot.details())
                 .setState(snapshot.state())
-                .setLargeImage(snapshot.logoKey(), snapshot.details())
+                .setLargeImage(snapshot.largeImage(), snapshot.displayName())
                 .setStartTimestamp(snapshot.startTime())
                 .addButton("CurseForge", snapshot.curseforgeUrl())
-                .addButton("Discord", DiscordRpcManager.DISCORD_URL)
-                .build();
+                .addButton("Discord", DiscordRpcManager.DISCORD_URL);
+
+        if (!snapshot.smallImage().isBlank()) {
+            builder.setSmallImage(snapshot.smallImage(), snapshot.mods());
+        }
+
+        Progress currentProgress = snapshot.progress();
+        if (currentProgress != null) {
+            builder.setParty(DiscordRpcManager.PARTY_ID, currentProgress.current(), currentProgress.max());
+        }
+
+        return builder.build();
     }
     
     private static void handleFailure(Exception exception) {
@@ -341,6 +478,8 @@ public final class DiscordRpcManager {
     }
     
     private static boolean isConfiguredEnabled() {
+        if (DiscordRpcManager.deferredToSimpleRpc) return false;
+
         return ATTConfig.RPC_ENABLED.get();
     }
     
@@ -348,12 +487,18 @@ public final class DiscordRpcManager {
         return ATTConfig.packProfile();
     }
 
+    private record Progress(int current, int max) { }
+
     private record Snapshot(
             long applicationId,
             String details,
             String state,
             String curseforgeUrl,
-            String logoKey,
+            String largeImage,
+            String smallImage,
+            String displayName,
+            String mods,
+            Progress progress,
             long startTime
     ) { }
 }

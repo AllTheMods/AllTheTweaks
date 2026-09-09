@@ -88,6 +88,8 @@ repositories {
         url = "https://api.modrinth.com/maven"
     }
     maven { url = "https://maven.bawnorton.com/releases" }
+    maven { url = "https://maven.latvian.dev/releases" }
+    maven { url = "https://maven.ftb.dev/releases" }
 }
 
 dependencies {
@@ -101,6 +103,10 @@ dependencies {
     implementation "curse.maven:pipez-443900:7904268"
     implementation "curse.maven:modernfix-790626:7969600"
     runtimeOnly "curse.maven:jade-324717:8651070"
+    runtimeOnly "dev.latvian.mods:kubejs-neoforge:${kubejs_version}"
+    runtimeOnly "dev.ftb.mods:ftb-library-neoforge:${ftb_library_version}"
+    runtimeOnly "dev.ftb.mods:ftb-teams-neoforge:${ftb_teams_version}"
+    runtimeOnly "dev.ftb.mods:ftb-quests-neoforge:${ftb_quests_version}"
     compileOnly(annotationProcessor("com.github.bawnorton.mixinsquared:mixinsquared-common:0.3.7-beta.1"))
     jarJar(implementation("com.github.bawnorton.mixinsquared:mixinsquared-neoforge:0.3.7-beta.1")) {
         version {

@@ -1,27 +1,26 @@
 package net.allthemods.allthetweaks.pack;
 
-/**
- * Identity of the modpack this instance is branded as. Every field is supplied by the
- * {@code pack} section of the common config, so a pack only needs a config change to brand itself.
- */
+import java.util.List;
+
 public record PackProfile(
         String displayName,
         long applicationId,
         String curseforgeUrl,
-        String logoKey,
+        String largeImage,
+        String smallImage,
         String icon16,
-        String icon32
+        String icon32,
+        List<String> idleMessages
 ) {
 
-    /**
-     * Values used until the common config is loaded, and the defaults written into a fresh config.
-     */
     public static final PackProfile DEFAULT = new PackProfile(
             "All The Mods 11",
             1495847949358465084L,
             "https://www.curseforge.com/minecraft/modpacks/all-the-mods-11",
             "icon",
             "",
-            ""
+            "",
+            "",
+            List.of()
     );
 }

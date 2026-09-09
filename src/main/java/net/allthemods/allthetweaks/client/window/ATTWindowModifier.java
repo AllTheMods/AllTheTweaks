@@ -91,10 +91,6 @@ public final class ATTWindowModifier {
         }
     }
 
-    /**
-     * Opens the icon named by the config if it exists in the mod's config folder, otherwise the
-     * icon bundled in the jar. Names are resolved inside that folder only.
-     */
     private static InputStream openIcon(String configuredName, String bundledPath) throws IOException {
         Path configured = ATTWindowModifier.resolveInConfigFolder(configuredName);
 

@@ -50,7 +50,9 @@ public class ATTLanguageProvider extends LanguageProvider {
         this.add("allthetweaks.configuration.pack.display_name.tooltip", "Shown in the window title and on the main menu branding lines.");
         this.add("allthetweaks.configuration.pack.curseforge_url.tooltip", "Opened by the CurseForge button on the Discord Rich Presence card.");
         this.add("allthetweaks.configuration.pack.discord.application_id.tooltip", "The Discord application the presence is published under. Its name and uploaded art are what players see on the card, so a pack with its own branding needs its own application.");
-        this.add("allthetweaks.configuration.pack.discord.logo_key.tooltip", "Art asset key uploaded to that Discord application. The card shows no image unless this matches one of its assets.");
+        this.add("allthetweaks.configuration.pack.discord.large_image.tooltip", "Main image on the presence card. Accepts an asset key uploaded to the Discord application or a public image URL. An unknown key falls back to the application's own icon.");
+        this.add("allthetweaks.configuration.pack.discord.small_image.tooltip", "Small icon drawn over the corner of the large image. Accepts an asset key from the Discord application or a public image URL. Blank means no corner icon.");
+        this.add("allthetweaks.configuration.pack.discord.idle_messages.tooltip", "Lines shown instead of Main Menu while the player sits in the menu. One is picked at random and swapped for another every minute.");
         this.add("allthetweaks.configuration.pack.window.icon_16.tooltip", "File name inside the allthetweaks config folder. Leave blank to use the bundled icon.");
         this.add("allthetweaks.configuration.pack.window.icon_32.tooltip", "File name inside the allthetweaks config folder. Leave blank to use the bundled icon.");
         this.add("allthetweaks.configuration.rpc_enabled.tooltip", "Publish this pack as your Discord activity. Takes effect without restarting.");
@@ -59,7 +61,9 @@ public class ATTLanguageProvider extends LanguageProvider {
         this.add("allthetweaks.configuration.pack.display_name", "Pack Name");
         this.add("allthetweaks.configuration.pack.curseforge_url", "Pack CurseForge Page");
         this.add("allthetweaks.configuration.pack.discord.application_id", "Discord Application ID");
-        this.add("allthetweaks.configuration.pack.discord.logo_key", "Discord Logo Asset Key");
+        this.add("allthetweaks.configuration.pack.discord.large_image", "Discord Main Image");
+        this.add("allthetweaks.configuration.pack.discord.small_image", "Discord Corner Icon");
+        this.add("allthetweaks.configuration.pack.discord.idle_messages", "Main Menu Idle Messages");
         this.add("allthetweaks.configuration.pack.window.icon_16", "Window Icon (16x16)");
         this.add("allthetweaks.configuration.pack.window.icon_32", "Window Icon (32x32)");
         

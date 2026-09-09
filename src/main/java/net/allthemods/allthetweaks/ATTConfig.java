@@ -6,12 +6,17 @@ import net.neoforged.neoforge.common.ModConfigSpec;
 
 import net.allthemods.allthetweaks.pack.PackProfile;
 
+import java.util.ArrayList;
+import java.util.List;
+
 public final class ATTConfig {
 
     public static final ModConfigSpec.ConfigValue<String> PACK_DISPLAY_NAME;
     public static final ModConfigSpec.ConfigValue<String> PACK_CURSEFORGE_URL;
     public static final ModConfigSpec.LongValue PACK_DISCORD_APPLICATION_ID;
-    public static final ModConfigSpec.ConfigValue<String> PACK_DISCORD_LOGO_KEY;
+    public static final ModConfigSpec.ConfigValue<String> PACK_DISCORD_LARGE_IMAGE;
+    public static final ModConfigSpec.ConfigValue<String> PACK_DISCORD_SMALL_IMAGE;
+    public static final ModConfigSpec.ConfigValue<List<? extends String>> PACK_DISCORD_IDLE_MESSAGES;
     public static final ModConfigSpec.ConfigValue<String> PACK_ICON_16;
     public static final ModConfigSpec.ConfigValue<String> PACK_ICON_32;
     public static final ModConfigSpec COMMON;
@@ -39,10 +44,23 @@ public final class ATTConfig {
                 .comment("Discord application the Rich Presence connects to")
                 .translation("allthetweaks.configuration.pack.discord.application_id")
                 .defineInRange("application_id", PackProfile.DEFAULT.applicationId(), 0L, Long.MAX_VALUE);
-        PACK_DISCORD_LOGO_KEY = common
-                .comment("Asset key of the large image registered on that Discord application")
-                .translation("allthetweaks.configuration.pack.discord.logo_key")
-                .define("logo_key", PackProfile.DEFAULT.logoKey());
+        PACK_DISCORD_LARGE_IMAGE = common
+                .comment("Asset key or image URL for the main image on the card")
+                .translation("allthetweaks.configuration.pack.discord.large_image")
+                .define("large_image", PackProfile.DEFAULT.largeImage());
+        PACK_DISCORD_SMALL_IMAGE = common
+                .comment("Asset key or image URL for the small icon in the card's corner", "Leave blank for no corner icon")
+                .translation("allthetweaks.configuration.pack.discord.small_image")
+                .define("small_image", PackProfile.DEFAULT.smallImage());
+        PACK_DISCORD_IDLE_MESSAGES = common
+                .comment("Lines shown instead of \"Main Menu\" while the player sits in the menu",
+                        "One is picked at random and swapped for another every minute",
+                        "Leave empty to always show the plain menu line")
+                .translation("allthetweaks.configuration.pack.discord.idle_messages")
+                .defineList("idle_messages",
+                        List.of("Getting coffee", "Making a sandwich", "Reading the changelog", "Looking for the right button", "Doomscrolling"),
+                        () -> "Staring at the menu",
+                        ATTConfig::isIdleMessage);
         common.pop();
 
         common.push("window");
@@ -73,12 +91,24 @@ public final class ATTConfig {
         container.registerConfig(ModConfig.Type.CLIENT, ATTConfig.CLIENT);
     }
 
-    /**
-     * The pack this instance is branded as. Safe to call before the common config is loaded, in
-     * which case it reports {@link PackProfile#DEFAULT}.
-     */
     public static PackProfile packProfile() {
         return ATTConfig.packProfile;
+    }
+
+    private static boolean isIdleMessage(Object value) {
+        if (!(value instanceof String entry)) return false;
+
+        return entry.length() >= 2 && entry.length() <= 128;
+    }
+
+    private static List<String> readIdleMessages() {
+        List<String> messages = new ArrayList<>();
+
+        for (String entry : ATTConfig.PACK_DISCORD_IDLE_MESSAGES.get()) {
+            if (ATTConfig.isIdleMessage(entry)) messages.add(entry);
+        }
+
+        return List.copyOf(messages);
     }
 
     public static void refreshPackProfile() {
@@ -88,9 +118,11 @@ public final class ATTConfig {
                 ATTConfig.PACK_DISPLAY_NAME.get(),
                 ATTConfig.PACK_DISCORD_APPLICATION_ID.get(),
                 ATTConfig.PACK_CURSEFORGE_URL.get(),
-                ATTConfig.PACK_DISCORD_LOGO_KEY.get(),
+                ATTConfig.PACK_DISCORD_LARGE_IMAGE.get(),
+                ATTConfig.PACK_DISCORD_SMALL_IMAGE.get(),
                 ATTConfig.PACK_ICON_16.get(),
-                ATTConfig.PACK_ICON_32.get()
+                ATTConfig.PACK_ICON_32.get(),
+                ATTConfig.readIdleMessages()
         );
     }
 }
