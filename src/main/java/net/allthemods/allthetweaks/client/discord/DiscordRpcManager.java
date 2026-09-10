@@ -5,7 +5,9 @@ import net.neoforged.fml.ModList;
 import net.neoforged.neoforge.client.event.ClientTickEvent;
 
 import net.allthemods.allthetweaks.ATTConfig;
+import net.allthemods.allthetweaks.AllTheTweaks;
 import net.allthemods.allthetweaks.pack.PackProfile;
+import net.allthemods.allthetweaks.proxy.BCCProxy;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -21,6 +23,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.function.Supplier;
 
 public final class DiscordRpcManager {
     
@@ -47,9 +50,16 @@ public final class DiscordRpcManager {
     private static int ticksSinceRefresh;
     private static boolean deferredToSimpleRpc;
     private static boolean refreshFailureLogged;
+    private static boolean connectLogged;
+    private static boolean connectFailureLogged;
     private static volatile Progress progress;
     private static volatile String details;
     private static volatile String stateText;
+    private static volatile String menuState;
+    private static volatile Supplier<String> detailsProvider;
+    private static volatile Supplier<String> stateProvider;
+    private static volatile Supplier<String> menuStateProvider;
+    private static volatile Supplier<String> smallImageProvider;
     private static volatile String smallImage;
     private static long startTime;
     private static long nextReconnectAt;
@@ -110,6 +120,58 @@ public final class DiscordRpcManager {
         DiscordRpcManager.stateText = null;
     }
 
+    public static void setDetailsProvider(Supplier<String> provider) {
+        DiscordRpcManager.detailsProvider = provider;
+    }
+
+    public static void setStateProvider(Supplier<String> provider) {
+        DiscordRpcManager.stateProvider = provider;
+    }
+
+    public static void setMenuStateProvider(Supplier<String> provider) {
+        DiscordRpcManager.menuStateProvider = provider;
+    }
+
+    public static void setSmallImageProvider(Supplier<String> provider) {
+        DiscordRpcManager.smallImageProvider = provider;
+    }
+
+    private static void pollProviders() {
+        if (DiscordRpcManager.detailsProvider != null) {
+            DiscordRpcManager.details = DiscordRpcManager.clampLine(DiscordRpcManager.provide(DiscordRpcManager.detailsProvider));
+        }
+
+        if (DiscordRpcManager.stateProvider != null) {
+            DiscordRpcManager.stateText = DiscordRpcManager.clampLine(DiscordRpcManager.provide(DiscordRpcManager.stateProvider));
+        }
+
+        if (DiscordRpcManager.menuStateProvider != null) {
+            DiscordRpcManager.menuState = DiscordRpcManager.clampLine(DiscordRpcManager.provide(DiscordRpcManager.menuStateProvider));
+        }
+
+        if (DiscordRpcManager.smallImageProvider != null) {
+            String image = DiscordRpcManager.provide(DiscordRpcManager.smallImageProvider);
+            DiscordRpcManager.smallImage = image == null ? null : image.strip();
+        }
+    }
+
+    private static String provide(Supplier<String> provider) {
+        try {
+            return provider.get();
+        } catch (Exception exception) {
+            DiscordRpcManager.LOGGER.debug("Discord RPC value provider failed", exception);
+            return null;
+        }
+    }
+
+    public static void setMenuState(String line) {
+        DiscordRpcManager.menuState = DiscordRpcManager.clampLine(line);
+    }
+
+    public static void clearMenuState() {
+        DiscordRpcManager.menuState = null;
+    }
+
     public static void setSmallImage(String image) {
         DiscordRpcManager.smallImage = image == null ? "" : image.strip();
     }
@@ -168,6 +230,8 @@ public final class DiscordRpcManager {
             if (teardown) DiscordRpcManager.scheduleUpdate();
             return;
         }
+
+        DiscordRpcManager.pollProviders();
 
         PackProfile nextPack = DiscordRpcManager.getConfiguredPack();
         RPCState nextState = RPCState.resolve();
@@ -337,8 +401,12 @@ public final class DiscordRpcManager {
         return messages.get(rolled < index ? rolled : rolled + 1);
     }
 
-    private static String resolveSmallImage(PackProfile currentPack) {
-        return DiscordRpcManager.smallImage != null ? DiscordRpcManager.smallImage : currentPack.smallImage();
+    private static String resolveSmallImage(RPCState currentState, PackProfile currentPack) {
+        if (currentState == RPCState.PLAYING && DiscordRpcManager.smallImage != null) {
+            return DiscordRpcManager.smallImage;
+        }
+
+        return currentPack.smallImage();
     }
 
     private static String resolveState(RPCState currentState, String mods) {
@@ -346,7 +414,23 @@ public final class DiscordRpcManager {
             return DiscordRpcManager.stateText;
         }
 
+        if (currentState == RPCState.MAIN_MENU) {
+            if (DiscordRpcManager.menuState != null) return DiscordRpcManager.menuState;
+
+            String version = DiscordRpcManager.packVersion();
+            if (version != null) return version;
+        }
+
         return mods;
+    }
+
+    private static String packVersion() {
+        if (!AllTheTweaks.BCC) return null;
+
+        String version = BCCProxy.getVersion();
+        if (version == null || version.isBlank() || version.equals("N/A")) return null;
+
+        return "v" + version;
     }
 
     private static String resolveDetails(RPCState currentState) {
@@ -378,7 +462,7 @@ public final class DiscordRpcManager {
                 DiscordRpcManager.resolveState(currentState, mods),
                 currentPack.curseforgeUrl(),
                 currentPack.largeImage(),
-                DiscordRpcManager.resolveSmallImage(currentPack),
+                DiscordRpcManager.resolveSmallImage(currentState, currentPack),
                 currentPack.displayName(),
                 mods,
                 currentProgress,
@@ -402,6 +486,12 @@ public final class DiscordRpcManager {
                     DiscordRpcManager.nextReconnectAt = 0L;
                     DiscordRpcManager.lastSnapshot = null;
                 }
+
+                if (!DiscordRpcManager.connectLogged) {
+                    DiscordRpcManager.connectLogged = true;
+                    DiscordRpcManager.LOGGER.info("Discord Rich Presence connected as {} (application {})",
+                            snapshot.displayName(), snapshot.applicationId());
+                }
                 return true;
             } catch (Exception exception) {
                 synchronized (DiscordRpcManager.LOCK) {
@@ -410,7 +500,15 @@ public final class DiscordRpcManager {
                 }
                 
                 DiscordRpcManager.closeClient();
-                DiscordRpcManager.LOGGER.debug("Discord RPC unavailable: {}", exception.getMessage());
+
+                if (!DiscordRpcManager.connectFailureLogged) {
+                    DiscordRpcManager.connectFailureLogged = true;
+                    DiscordRpcManager.LOGGER.warn("Discord Rich Presence unavailable, retrying every {} seconds, further failures are logged at debug: {}",
+                            DiscordRpcManager.RECONNECT_DELAY_MS / 1000L, exception.getMessage());
+                } else {
+                    DiscordRpcManager.LOGGER.debug("Discord RPC unavailable: {}", exception.getMessage());
+                }
+
                 DiscordRpcManager.LOGGER.trace("Discord RPC connection failure stack trace", exception);
                 return false;
             }

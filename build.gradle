@@ -116,9 +116,17 @@ dependencies {
     }
 }
 
+jar {
+    // shadowJar owns the release name, so keep the un-shadowed jar out of its way
+    archiveClassifier = 'slim'
+}
+
 tasks.named("shadowJar", com.github.jengelman.gradle.plugins.shadow.tasks.ShadowJar) {
     archiveClassifier.set("")
     configurations = [project.configurations.shadow]
+
+    // shadowJar builds from the source sets, so the jarJar payload has to be added back
+    from(tasks.named("jarJar"))
 
     relocate("fun.crashsystem.jdrpc", "${project.group}.shadow.jdrpc")
 }

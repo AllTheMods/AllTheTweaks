@@ -2,6 +2,8 @@ package net.allthemods.allthetweaks.api;
 
 import net.allthemods.allthetweaks.client.discord.DiscordRpcManager;
 
+import java.util.function.Supplier;
+
 public final class ATTRpc {
 
     private ATTRpc() { }
@@ -20,6 +22,30 @@ public final class ATTRpc {
 
     public static void clearState() {
         DiscordRpcManager.clearState();
+    }
+
+    public static void setDetailsProvider(Supplier<String> provider) {
+        DiscordRpcManager.setDetailsProvider(provider);
+    }
+
+    public static void setStateProvider(Supplier<String> provider) {
+        DiscordRpcManager.setStateProvider(provider);
+    }
+
+    public static void setMenuStateProvider(Supplier<String> provider) {
+        DiscordRpcManager.setMenuStateProvider(provider);
+    }
+
+    public static void setSmallImageProvider(Supplier<String> provider) {
+        DiscordRpcManager.setSmallImageProvider(provider);
+    }
+
+    public static void setMenuState(String line) {
+        DiscordRpcManager.setMenuState(line);
+    }
+
+    public static void clearMenuState() {
+        DiscordRpcManager.clearMenuState();
     }
 
     public static void setSmallImage(String image) {
