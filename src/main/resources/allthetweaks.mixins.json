@@ -10,7 +10,9 @@
     "MixinMeteoriteStructure",
     "MixinBaseMachineBlock",
     "YACLNuclearBombMixin",
-    "MixinSpawnInterdictionHandler"
+    "MixinSpawnInterdictionHandler",
+    "MixinContinuousOBBCollider",
+    "MixinServerLevelPlot"
 
   ],
   "client": [

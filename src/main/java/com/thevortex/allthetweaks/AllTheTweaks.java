@@ -35,7 +35,6 @@ public class AllTheTweaks
 {
     public static final String MODID = "allthetweaks";
     public static final Logger LOGGER = LogManager.getLogger(MODID);
-    public static boolean configFire = false;
     private static Runnable runnableCallback;
     public static boolean BCC;
     public static int ModsLoaded;

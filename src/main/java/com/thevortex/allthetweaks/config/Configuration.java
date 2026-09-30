@@ -35,9 +35,6 @@ public class Configuration {
 	public static class Common {
 		public final ModConfigSpec.IntValue mainmode;
 		public final ModConfigSpec.BooleanValue discord;
-		public final ModConfigSpec.IntValue majorver;
-		public final ModConfigSpec.IntValue minorver;
-		public final ModConfigSpec.IntValue minorrevver;
 
 		public final ModConfigSpec.ConfigValue<String> packDisplayName;
 		public final ModConfigSpec.ConfigValue<String> packCurseforgeUrl;
@@ -57,21 +54,6 @@ public class Configuration {
 
 			BUILDER.push("discord");
 			discord = BUILDER.comment("Enable Discord Rich Presence").define("discord",true);
-			BUILDER.pop();
-
-			BUILDER.push("packversionmaj");
-			majorver = BUILDER.comment("Pack Release Version Format : X").defineInRange("major",
-					1, 0, 32768);
-			BUILDER.pop();
-
-			BUILDER.push("packversionmin");
-			minorver = BUILDER.comment("Pack Minor Version : X").defineInRange("minor",
-					0, 0, 32768);
-			BUILDER.pop();
-
-			BUILDER.push("packversionminrev");
-			minorrevver = BUILDER.comment("Pack Minor Version Revision : X").defineInRange("minorrev",
-					0, 0, 32768);
 			BUILDER.pop();
 
 			BUILDER.push("pack");

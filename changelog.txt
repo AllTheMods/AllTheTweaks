@@ -1,6 +1,15 @@
+1.21.1-2.12.0
+
+- Fixed Sable sub-level chunks losing their data attachments every time a plot is reloaded
+- Dropped the unused pack version config keys, they come from BCC now
+- Dropped the bundled MixinSquared, the canceller it was there for had no target left
+
+
 1.21.1-2.11.0
 
-- Suppressed the Apokinetics donation prompt that posts itself into chat every time you join a world
+- Suppressed the Apokinetics donation prompt
+- Fixed the Create collision crash until they fix it themselves https://github.com/Creators-of-Create/Create/pull/10301
+- Fixed a crash from loading before BCC https://github.com/AllTheMods/ATM-10/issues/3688
 
 
 1.21.1-2.10.0

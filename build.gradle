@@ -99,14 +99,6 @@ dependencies {
     // Jars in "libs" folder
     implementation fileTree('libs') { include '*.jar'}
 
-    // MixinSquared
-    compileOnly(annotationProcessor("com.github.bawnorton.mixinsquared:mixinsquared-common:0.3.7-beta.1"))
-    jarJar(implementation("com.github.bawnorton.mixinsquared:mixinsquared-neoforge:0.3.7-beta.1")) {
-        version {
-            strictly "[0.3.7-beta.1,)"
-            prefer "0.3.7-beta.1"
-        }
-    }
 
     shadow("com.github.CrashSystemZ:jDRPC:v1.2.1") {
         transitive = false
@@ -134,6 +126,7 @@ dependencies {
     implementation "curse.maven:${pipez}"
     implementation "curse.maven:yacl-667299:6336630"
     compileOnly("curse.maven:xycraft-machines-653791:5601045")
+    compileOnly("curse.maven:sable-1312371:8673825")
     implementation "curse.maven:modernfix-790626:7200212"
     implementation "curse.maven:applied-energistics-2-223794:7027323"
     runtimeOnly "curse.maven:guideme-1173950:${guideme_file}"
