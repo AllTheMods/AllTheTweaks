@@ -1,0 +1,190 @@
+1.21.1-2.11.0
+
+- Suppressed the Apokinetics donation prompt that posts itself into chat every time you join a world
+
+
+1.21.1-2.10.0
+
+- New Discord Rich Presence integration, the pack name, images, buttons and idle messages all come from config
+- Packs can drive the presence from KubeJS, setting the details and state lines, quest progress and the corner icon
+
+
+1.21.1-2.9.4
+
+- Fixed an Immersive Engineering crash
+
+
+1.21.1-2.9.3
+
+- Fixed the Just Dire Things explosion dupe
+
+
+1.21.1-2.9.2
+
+- Removed the client payload handler and mapped registry mixins, no longer needed
+
+
+1.21.1-2.9.1
+
+- Removed broken Hostile Neural Networks leftovers from earlier versions that were erroring and breaking models
+
+
+1.21.1-2.9.0
+
+- AE2 meteors no longer destroy terrain, so they stop ruining other structures
+
+
+1.21.1-2.8.5
+
+- Fixed Discord Rich Presence not shutting off when the game closes
+
+
+1.21.1-2.8.4
+
+- Fixed Discord Rich Presence not shutting down when the game exits
+- Added Mac and Linux Rich Presence support via pipes
+
+
+1.21.1-2.8.3
+
+- Added patches for long standing NeoForge bugs that are unlikely to be fixed upstream
+
+
+1.21.1-2.8.2
+
+- Fixed the Cobblemon Berry Pouch CME
+
+
+1.21.1-2.8.1
+
+- Added a config toggle for the icon replacement (Uncandango)
+
+
+1.21.1-2.7.0
+
+- Added the pack version to the window title and main menu, read from BCC
+- Moved ModernFix to a more logical place in the main menu branding list
+
+
+1.21.1-2.6.9
+
+- Added new config options for upcoming packs
+
+
+1.21.1-2.6.8
+
+- Dropped the Corail mixin, no longer needed after its feature changes
+
+
+1.21.1-2.6.7
+
+- Dropped the XyCraft mixin, fixed upstream
+
+
+1.21.1-2.6.6
+
+- Updated the Corail mixin fix for newer versions (Satherov)
+- Fixed the XyCraft and Ars tooltip interaction crash (Uncandango)
+
+
+1.21.1-2.6.5
+
+- Updated the Discord display info for packmode 2
+
+
+1.21.1-2.6.4
+
+- Dropped a null fix mixin, fixed upstream in NeoForge
+
+
+1.21.1-2.6.3
+
+- Added a patch for YACL (Shadows)
+- Added packmode 6
+
+
+1.21.1-2.6.2
+
+- All upgrade options now work on every Pipez tier (Satherov)
+
+
+1.21.1-2.6.1
+
+- Disabled the Tombstone holiday feature
+
+
+1.21.1-2.6.0
+
+- Added ATM Arcana branding
+
+
+1.21.1-2.5.4
+
+- Added icons for the Arcana modpack
+- Added a patch for long unpatched NeoForge nulls
+
+
+1.21.1-2.5.3
+
+- Removed the star shard recipe from Immersive Engineering
+
+
+1.21.1-2.5.2
+
+- Added a temporary fix for the random disconnect packet
+
+
+1.21.1-2.5.0
+
+- Icons are now set on the main game thread during loading, fixing some Mac and Linux systems
+
+
+1.21.1-2.4.9
+
+- Fixed a worldgen deadlock with Villages and Pillages (Uncandango)
+
+
+1.21.1-2.4.8
+
+- Dropped the NoChatReports patch, fixed in the mod
+
+
+1.21.1-2.4.7
+
+- No release notes were published for this version
+
+
+1.21.1-2.4.6
+
+- Fixed a star shard crafting recipe in the IE crusher
+
+
+1.21.1-2.4.5
+
+- Added a patch for the NoChatReports bug
+- MixinSquared is now bundled in the jar
+
+
+1.21.1-2.4.4
+
+- Mekanism compat fixes
+
+
+1.21.1-2.4.3
+
+- Translation and datagen fixes
+
+
+1.21.1-2.4.2
+
+- Updated for the new NeoForge configuration flow
+
+
+1.21.1-2.4.1
+
+- Fixed a server crash during startup
+
+
+1.21.1-2.4.0
+
+- Initial 1.21 port

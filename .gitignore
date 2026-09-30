@@ -12,6 +12,7 @@
 /src/generated/resources/.cache
 /libs
 /*.txt
+!/changelog.txt
 /.vscode/settings.json
 /*.dat
 /*.json
