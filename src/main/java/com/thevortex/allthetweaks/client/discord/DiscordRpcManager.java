@@ -46,6 +46,7 @@ public final class DiscordRpcManager {
     private static boolean refreshFailureLogged;
     private static boolean connectLogged;
     private static boolean connectFailureLogged;
+    private static long clientApplicationId;
     private static volatile Progress progress;
     private static volatile String details;
     private static volatile String stateText;
@@ -396,9 +397,16 @@ public final class DiscordRpcManager {
             }
 
             try {
-                DiscordRpcManager.closeClient();
+                if (DiscordRpcManager.client != null
+                        && DiscordRpcManager.clientApplicationId != snapshot.applicationId()) {
+                    DiscordRpcManager.closeClient();
+                }
 
-                DiscordRpcManager.client = DiscordIPC.create(snapshot.applicationId());
+                if (DiscordRpcManager.client == null) {
+                    DiscordRpcManager.client = DiscordIPC.create(snapshot.applicationId());
+                    DiscordRpcManager.clientApplicationId = snapshot.applicationId();
+                }
+
                 DiscordRpcManager.client.connect();
 
                 synchronized (DiscordRpcManager.LOCK) {
@@ -417,8 +425,6 @@ public final class DiscordRpcManager {
                     DiscordRpcManager.nextReconnectAt = System.currentTimeMillis() + DiscordRpcManager.RECONNECT_DELAY_MS;
                     DiscordRpcManager.lastSnapshot = null;
                 }
-
-                DiscordRpcManager.closeClient();
 
                 if (!DiscordRpcManager.connectFailureLogged) {
                     DiscordRpcManager.connectFailureLogged = true;
@@ -482,6 +488,7 @@ public final class DiscordRpcManager {
     private static void closeClient() {
         DiscordIPC currentClient = DiscordRpcManager.client;
         DiscordRpcManager.client = null;
+        DiscordRpcManager.clientApplicationId = 0L;
         if (currentClient == null) return;
 
         try {
