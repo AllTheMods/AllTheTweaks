@@ -50,6 +50,8 @@ public class DRP {
 			
 		} catch (final NoDiscordClientException ex) {
 			
+		} catch (final RuntimeException ex) {
+			AllTheTweaks.LOGGER.warn("Discord Rich Presence could not connect and stays off for this session", ex);
 		}
 	}
 	

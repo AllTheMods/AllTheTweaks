@@ -264,7 +264,7 @@ public final class IPCClient implements Closeable {
 	public void close() {
 		checkConnected(true);
 		LOGGER.debug("Closing IPC Pipe...");
-		//sendRichPresence(null);
+		sendRichPresence(null);
 		send(OpCode.CLOSE, new JSONObject(), null);
 		status = Status.CLOSED;
 	}
@@ -515,8 +515,13 @@ public final class IPCClient implements Closeable {
 		if (status == Status.CLOSED)
 			return new Packet(OpCode.CLOSE, null);
 
-		final OpCode op = OpCode.values()[Integer.reverseBytes(pipe.readInt())];
+		final int opIndex = Integer.reverseBytes(pipe.readInt());
+		if (opIndex < 0 || opIndex >= OpCode.values().length)
+			throw new IOException("Unknown opcode " + opIndex);
+		final OpCode op = OpCode.values()[opIndex];
 		final int len = Integer.reverseBytes(pipe.readInt());
+		if (len < 0)
+			throw new IOException("Invalid packet length " + len);
 		final byte[] d = new byte[len];
 
 		pipe.readFully(d);
